@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shopping List Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --bg-dark: #0f0f0f;
+            --bg-card: #1a1a1a;
+            --bg-elevated: #242424;
+            --accent: #a78bfa;
+            --accent-glow: rgba(167, 139, 250, 0.3);
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --success: #34d399;
+            --danger: #f87171;
+            --border: rgba(255,255,255,0.08);
+        }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-dark);
+            min-height: 100vh;
+            padding: 40px 20px;
+            background-image: 
+                radial-gradient(ellipse at 20% 20%, rgba(167, 139, 250, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+        }
+        
+        .container {
+            max-width: 520px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            border-radius: 24px;
+            box-shadow: 
+                0 0 0 1px var(--border),
+                0 25px 50px -12px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+        
+        .header {
+            padding: 35px 30px 25px;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), #8b5cf6, #a78bfa);
+        }
+        
+        .header h2 { 
+            font-size: 26px; 
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+        
+        .header p { 
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 6px;
+        }
+        
+        .input-group {
+            padding: 25px;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        
+        input {
+            flex: 1;
+            padding: 14px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        
+        input::placeholder { 
+            color: var(--text-muted); 
+        }
+        
+        button.add-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button.add-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        button.add-btn:hover::before {
+            left: 100%;
+        }
+        
+        button.add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+        }
+        
+        .list-container {
+            padding: 20px;
+            min-height: 250px;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+        
+        .list-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .list-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .list-container::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        
+        ul { list-style: none; }
+        
+        li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px;
+            margin-bottom: 12px;
+            background: var(--bg-elevated);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            animation: fadeSlideIn 0.4s ease forwards;
+        }
+        
+        li.animate {
+            opacity: 1;
+        }
+        
+        @keyframes fadeSlideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(10px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+        
+        li:hover {
+            border-color: rgba(167, 139, 250, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .item-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 15px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .item-details {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .item-details .category {
+            background: rgba(167, 139, 250, 0.15);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .item-details .price {
+            color: var(--text-muted);
+        }
+        
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: 12px;
+        }
+        
+        .item-actions button {
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .check-btn {
+            background: rgba(52, 211, 153, 0.15);
+            color: var(--success);
+        }
+        
+        .check-btn:hover { 
+            background: var(--success);
+            color: var(--bg-dark);
+            transform: scale(1.1);
+        }
+        
+        .delete-btn {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--danger);
+        }
+        
+        .delete-btn:hover { 
+            background: var(--danger);
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        li.bought {
+            opacity: 0.4;
+            background: rgba(30, 30, 30, 0.6) !important;
+            border-color: rgba(255, 255, 255, 0.05) !important;
+        }
+        
+        li.bought .item-name {
+            text-decoration: line-through !important;
+            text-decoration-color: #f87171 !important;
+            text-decoration-thickness: 2px;
+            color: var(--text-muted) !important;
+        }
+        
+        .footer {
+            padding: 22px 25px;
+            background: var(--bg-elevated);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .total-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .total {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .warning {
+            color: var(--danger);
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        
+        .empty-state span {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .empty-state p {
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>🛒 Shopping List</h2>
+        <p>Manage your items with style</p>
+    </div>
+    
+    <div class="input-group">
+        <div class="input-row">
+            <input id="name" placeholder="Item name">
+            <input id="category" placeholder="Category">
+        </div>
+        <div class="input-row">
+            <input id="price" type="number" placeholder="Price (₹)">
+            <button class="add-btn" onclick="addItem()">Add Item</button>
+        </div>
+    </div>
+
+    <div class="list-container">
+        <ul id="list"></ul>
+    </div>
+
+    <div class="footer">
+        <div>
+            <div class="total-label">Total</div>
+            <div class="total" id="total">₹0</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="number" id="budgetInput" value="2000" placeholder="Budget" style="width: 80px; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 13px;" onchange="updateBudget()">
+            <div id="warning"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let items = [];
+let budget = 2000;
+
+function updateBudget() {
+    budget = parseFloat(document.getElementById("budgetInput").value) || 2000;
+    display();
+}
+
+function addItem() {
+    let name = document.getElementById("name").value;
+    let category = document.getElementById("category").value;
+    let price = parseFloat(document.getElementById("price").value);
+    
+    if (!name || !price) {
+        alert("Please enter item name and price!");
+        return;
+    }
+
+    items.push({ name, category, price, bought: false });
+    display();
+    
+    document.getElementById("name").value = "";
+    document.getElementById("category").value = "";
+    document.getElementById("price").value = "";
+    document.getElementById("name").focus();
+}
+
+function display() {
+    let list = document.getElementById("list");
+    list.innerHTML = "";
+    let total = 0;
+
+    if (items.length === 0) {
+        list.innerHTML = `<div class="empty-state">
+            <span>✨</span>
+            <p>Your list is empty. Add your first item!</p>
+        </div>`;
+        document.getElementById("total").innerText = "₹0";
+        document.getElementById("warning").innerText = "";
+        return;
+    }
+
+    items.forEach((item, index) => {
+        total += item.price;
+
+        let li = document.createElement("li");
+        li.style.animationDelay = `${index * 0.05}s`;
+        li.classList.add("animate");
+        li.innerHTML = `
+            <div class="item-info">
+                <div class="item-name">${item.name}</div>
+                <div class="item-details">
+                    <span class="category">${item.category || 'General'}</span>
+                    <span class="price">₹${item.price}</span>
+                </div>
+            </div>
+            <div class="item-actions">
+                <button class="check-btn" onclick="toggle(${index})" title="Mark as bought">✓</button>
+                <button class="delete-btn" onclick="removeItem(${index})" title="Remove item">✕</button>
+            </div>`;
+
+        if (item.bought) li.classList.add("bought");
+
+        list.appendChild(li);
+    });
+
+    document.getElementById("total").innerText = "₹" + total.toLocaleString();
+
+    let warning = document.getElementById("warning");
+    if (total > budget) {
+        warning.innerHTML = "<span>⚠</span> Budget exceeded";
+    } else {
+        warning.innerText = "";
+    }
+}
+
+function toggle(i) {
+    items[i].bought = !items[i].bought;
+    display();
+}
+
+function removeItem(i) {
+    if (confirm("Remove this item?")) {
+        items.splice(i, 1);
+        display();
+    }
+}
+</script>
+
+</body>
+</html>
