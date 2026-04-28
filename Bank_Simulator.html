@@ -178,6 +178,28 @@
             box-shadow: 0 15px 40px rgba(239, 68, 68, 0.4);
         }
 
+        .reset-btn {
+            width: 100%;
+            margin-top: 15px;
+            padding: 14px 20px;
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            border-radius: 12px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .reset-btn:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
+        }
+
         #balance {
             font-size: 2.2em;
             font-weight: 700;
@@ -270,6 +292,166 @@
             padding: 20px;
             font-size: 0.9em;
         }
+
+        .interest-section {
+            margin-top: 30px;
+            border-top: 1px solid var(--border);
+            padding-top: 25px;
+        }
+
+        .interest-section h4 {
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .interest-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        #interestRate {
+            flex: 1;
+            padding: 12px 15px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.9em;
+        }
+
+        #interestRate:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .interest-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .interest-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
+        }
+
+        .interest-earned {
+            text-align: center;
+            padding: 10px;
+            background: rgba(52, 211, 153, 0.1);
+            border-radius: 8px;
+            color: var(--success);
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .savings-goal {
+            margin-top: 25px;
+            padding: 20px;
+            background: var(--bg-elevated);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .savings-goal h4 {
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            font-size: 1em;
+        }
+
+        .goal-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        #goalAmount {
+            flex: 1;
+            padding: 10px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85em;
+        }
+
+        .set-goal-btn {
+            padding: 10px 15px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .set-goal-btn:hover {
+            background: #9370db;
+        }
+
+        .goal-progress {
+            display: none;
+        }
+
+        .goal-progress.show {
+            display: block;
+        }
+
+        .goal-info {
+            text-align: left;
+            margin-bottom: 10px;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .goal-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .goal-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), #10b981);
+            transition: width 0.3s ease;
+        }
+
+        .goal-text {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8em;
+        }
+
+        .save-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .save-indicator.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -287,6 +469,7 @@
         <button id="deposit" onclick="deposit()">Deposit</button>
         <button id="withdraw" onclick="withdraw()">Withdraw</button>
     </div>
+    <button class="reset-btn" onclick="resetAccount()">🔄 Reset Everything</button>
 
     <h3 id="balance">₹0</h3>
     <p id="alert"></p>
@@ -297,11 +480,69 @@
             <div class="empty-history">No transactions yet</div>
         </ul>
     </div>
+
+    <div class="interest-section">
+        <h4>💵 Earn Interest</h4>
+        <div class="interest-group">
+            <input type="number" id="interestRate" placeholder="APR %" min="0" step="0.1" value="5">
+            <button class="interest-btn" onclick="calculateInterest()">Calculate</button>
+        </div>
+        <div id="interestEarned"></div>
+    </div>
+
+    <div class="savings-goal">
+        <h4>🎯 Savings Goal</h4>
+        <div class="goal-input-group">
+            <input type="number" id="goalAmount" placeholder="Target amount (₹)" min="0">
+            <button class="set-goal-btn" onclick="setGoal()">Set Goal</button>
+        </div>
+        <div class="goal-progress" id="goalProgress">
+            <div class="goal-info">
+                <span>Goal: ₹<span id="goalTarget">0</span></span> | Progress: <span id="goalPercent">0</span>%
+            </div>
+            <div class="goal-bar">
+                <div class="goal-fill" id="goalFill" style="width: 0%"></div>
+            </div>
+            <div class="goal-text">
+                <span id="goalRemaining">₹0 remaining</span>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div class="save-indicator" id="saveIndicator">✓ Saved</div>
 
 <script>
 let balance = 0;
 let history = [];
+let savingsGoal = 0;
+
+// Load data from localStorage
+function loadData() {
+    const saved = localStorage.getItem('bankData');
+    if (saved) {
+        const data = JSON.parse(saved);
+        balance = data.balance || 0;
+        history = data.history || [];
+        savingsGoal = data.savingsGoal || 0;
+    }
+    update();
+}
+
+// Save data to localStorage
+function saveData() {
+    const data = {
+        balance: balance,
+        history: history,
+        savingsGoal: savingsGoal
+    };
+    localStorage.setItem('bankData', JSON.stringify(data));
+    
+    // Show save indicator
+    const indicator = document.getElementById('saveIndicator');
+    indicator.classList.add('show');
+    setTimeout(() => indicator.classList.remove('show'), 2000);
+}
 
 function deposit() {
     let amt = parseFloat(document.getElementById("amount").value);
@@ -312,6 +553,7 @@ function deposit() {
     balance += amt;
     history.unshift({type: "deposit", amount: amt, text: "Deposited"});
     update();
+    saveData();
     document.getElementById("amount").value = "";
     document.getElementById("amount").focus();
 }
@@ -329,12 +571,79 @@ function withdraw() {
     balance -= amt;
     history.unshift({type: "withdraw", amount: amt, text: "Withdrew"});
     update();
+    saveData();
     document.getElementById("amount").value = "";
     document.getElementById("amount").focus();
 }
 
+function calculateInterest() {
+    const rate = parseFloat(document.getElementById("interestRate").value);
+    if (isNaN(rate) || rate < 0) {
+        alert("Please enter a valid interest rate!");
+        return;
+    }
+    
+    const interest = (balance * rate) / 100;
+    const newBalance = balance + interest;
+    
+    if (interest > 0) {
+        balance = newBalance;
+        history.unshift({
+            type: "interest",
+            amount: interest,
+            text: "Interest Earned (" + rate + "% APR)"
+        });
+        
+        const interestElem = document.getElementById('interestEarned');
+        interestElem.innerHTML = `<div class="interest-earned">✓ Interest earned: ₹${interest.toFixed(2)}</div>`;
+        
+        update();
+        saveData();
+        
+        setTimeout(() => {
+            interestElem.innerHTML = '';
+        }, 3000);
+    } else {
+        alert("No balance to earn interest on!");
+    }
+}
+
+function setGoal() {
+    const goal = parseFloat(document.getElementById("goalAmount").value);
+    if (isNaN(goal) || goal <= 0) {
+        alert("Please enter a valid goal amount!");
+        return;
+    }
+    
+    savingsGoal = goal;
+    document.getElementById("goalAmount").value = "";
+    update();
+    saveData();
+}
+
+function updateGoalProgress() {
+    if (savingsGoal > 0) {
+        const percent = Math.min((balance / savingsGoal) * 100, 100);
+        const remaining = Math.max(savingsGoal - balance, 0);
+        
+        document.getElementById('goalProgress').classList.add('show');
+        document.getElementById('goalTarget').innerText = savingsGoal.toLocaleString();
+        document.getElementById('goalPercent').innerText = Math.round(percent);
+        document.getElementById('goalFill').style.width = percent + '%';
+        document.getElementById('goalRemaining').innerText = remaining > 0 
+            ? `₹${remaining.toLocaleString()} remaining` 
+            : `✓ Goal achieved!`;
+        
+        if (remaining === 0) {
+            document.getElementById('goalRemaining').style.color = 'var(--success)';
+        }
+    } else {
+        document.getElementById('goalProgress').classList.remove('show');
+    }
+}
+
 function update() {
-    document.getElementById("balance").innerText = "₹" + balance.toLocaleString();
+    document.getElementById("balance").innerText = "₹" + balance.toLocaleString('en-IN', {maximumFractionDigits: 2});
 
     let list = document.getElementById("history");
     if (history.length === 0) {
@@ -343,13 +652,13 @@ function update() {
         list.innerHTML = "";
         history.forEach(h => {
             let li = document.createElement("li");
-            li.innerHTML = `<span>${h.text}</span><span>₹${h.amount.toLocaleString()}</span>`;
-            li.className = h.type + "-item";
+            li.innerHTML = `<span>${h.text}</span><span>₹${h.amount.toLocaleString('en-IN', {maximumFractionDigits: 2})}</span>`;
+            li.className = (h.type === 'interest' ? 'deposit-item' : h.type + "-item");
             list.appendChild(li);
         });
     }
 
-    // Creative feature: minimum balance alert
+    // Minimum balance alert
     let alertBox = document.getElementById("alert");
     if (balance < 500) {
         alertBox.innerText = "⚠️ Warning: Balance below minimum ₹500!";
@@ -357,6 +666,41 @@ function update() {
     } else {
         alertBox.innerText = "";
         alertBox.className = "";
+    }
+    
+    // Update savings goal progress
+    updateGoalProgress();
+}
+
+// Load saved data on page load
+window.addEventListener('load', loadData);
+
+function resetAccount() {
+    if (confirm('Are you sure you want to reset everything? This cannot be undone.')) {
+        // Clear all data
+        balance = 0;
+        history = [];
+        savingsGoal = 0;
+        
+        // Clear localStorage
+        localStorage.removeItem('bankData');
+        
+        // Clear input fields
+        document.getElementById('amount').value = '';
+        document.getElementById('interestRate').value = '5';
+        document.getElementById('goalAmount').value = '';
+        
+        // Update display
+        update();
+        
+        // Show confirmation
+        const indicator = document.getElementById('saveIndicator');
+        indicator.innerText = '✓ Account reset';
+        indicator.classList.add('show');
+        setTimeout(() => {
+            indicator.innerText = '✓ Saved';
+            indicator.classList.remove('show');
+        }, 2000);
     }
 }
 </script>
