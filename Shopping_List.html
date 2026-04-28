@@ -369,6 +369,134 @@
             font-size: 15px;
             color: var(--text-secondary);
         }
+
+        .list-manager {
+            padding: 15px 25px;
+            background: var(--bg-dark);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .list-manager select {
+            flex: 1;
+            min-width: 150px;
+            padding: 10px 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .list-manager button {
+            padding: 10px 14px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .list-manager button:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .list-manager .delete-list-btn:hover {
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .category-breakdown {
+            padding: 20px 25px;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border);
+            display: none;
+        }
+
+        .category-breakdown.show {
+            display: block;
+        }
+
+        .breakdown-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .breakdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .breakdown-label {
+            min-width: 100px;
+            font-size: 13px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .breakdown-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-card);
+            border-radius: 3px;
+            overflow: hidden;
+            min-width: 100px;
+        }
+
+        .breakdown-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .breakdown-amount {
+            min-width: 50px;
+            text-align: right;
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .sort-btn {
+            padding: 10px 14px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .sort-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .sort-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -393,6 +521,17 @@
         </div>
     </div>
 
+    <div class="list-manager">
+        <select id="listSelect" onchange="switchList()">
+            <option value="">Select a list...</option>
+        </select>
+        <button onclick="createNewList()">+ New List</button>
+        <button class="delete-list-btn" onclick="deleteCurrentList()" id="deleteListBtn" style="display:none;">Delete</button>
+        <button class="sort-btn" id="sortBtn" onclick="toggleSort()">Sort by Category</button>
+    </div>
+
+    <div class="category-breakdown" id="categoryBreakdown"></div>
+
     <div class="list-container">
         <ul id="list"></ul>
     </div>
@@ -412,13 +551,127 @@
 <script>
 let items = [];
 let budget = 2000;
+let currentListName = "";
+let sortByCategory = false;
+let allLists = {}; // Store all lists
+
+// Initialize on page load
+window.addEventListener('load', () => {
+    loadAllLists();
+    updateListSelect();
+});
+
+// Load all lists from localStorage
+function loadAllLists() {
+    const saved = localStorage.getItem('shoppingLists');
+    if (saved) {
+        allLists = JSON.parse(saved);
+    }
+}
+
+// Save all lists to localStorage
+function saveAllLists() {
+    localStorage.setItem('shoppingLists', JSON.stringify(allLists));
+}
+
+// Update the list selector dropdown
+function updateListSelect() {
+    const select = document.getElementById('listSelect');
+    select.innerHTML = '<option value="">Select a list...</option>';
+    for (let listName in allLists) {
+        const option = document.createElement('option');
+        option.value = listName;
+        option.textContent = listName + ` (${allLists[listName].items.length})`;
+        select.appendChild(option);
+    }
+    
+    if (currentListName && allLists[currentListName]) {
+        select.value = currentListName;
+        document.getElementById('deleteListBtn').style.display = 'inline-block';
+    } else {
+        document.getElementById('deleteListBtn').style.display = 'none';
+    }
+}
+
+// Create a new list
+function createNewList() {
+    const name = prompt("Enter new list name:");
+    if (!name || name.trim() === "") return;
+    
+    const listName = name.trim();
+    if (allLists[listName]) {
+        alert("List '" + listName + "' already exists!");
+        return;
+    }
+    
+    allLists[listName] = { items: [], budget: 2000 };
+    saveAllLists();
+    switchList(listName);
+    updateListSelect();
+}
+
+// Switch to a different list
+function switchList(listName = null) {
+    if (!listName) {
+        listName = document.getElementById('listSelect').value;
+    }
+    
+    if (!listName || !allLists[listName]) {
+        currentListName = "";
+        items = [];
+        budget = 2000;
+        display();
+        return;
+    }
+    
+    currentListName = listName;
+    items = allLists[listName].items;
+    budget = allLists[listName].budget;
+    sortByCategory = false;
+    document.getElementById('sortBtn').classList.remove('active');
+    document.getElementById('listSelect').value = listName;
+    document.getElementById('deleteListBtn').style.display = 'inline-block';
+    display();
+}
+
+// Delete current list
+function deleteCurrentList() {
+    if (!currentListName) return;
+    if (!confirm("Delete list '" + currentListName + "'?")) return;
+    
+    delete allLists[currentListName];
+    saveAllLists();
+    currentListName = "";
+    items = [];
+    budget = 2000;
+    sortByCategory = false;
+    document.getElementById('sortBtn').classList.remove('active');
+    updateListSelect();
+    display();
+}
+
+// Toggle sort by category
+function toggleSort() {
+    sortByCategory = !sortByCategory;
+    document.getElementById('sortBtn').classList.toggle('active');
+    display();
+}
 
 function updateBudget() {
     budget = parseFloat(document.getElementById("budgetInput").value) || 2000;
+    if (currentListName && allLists[currentListName]) {
+        allLists[currentListName].budget = budget;
+        saveAllLists();
+    }
     display();
 }
 
 function addItem() {
+    if (!currentListName) {
+        alert("Please create or select a list first!");
+        return;
+    }
+
     let name = document.getElementById("name").value;
     let category = document.getElementById("category").value;
     let price = parseFloat(document.getElementById("price").value);
@@ -429,12 +682,20 @@ function addItem() {
     }
 
     items.push({ name, category, price, bought: false });
+    saveListData();
     display();
     
     document.getElementById("name").value = "";
     document.getElementById("category").value = "";
     document.getElementById("price").value = "";
     document.getElementById("name").focus();
+}
+
+function saveListData() {
+    if (currentListName && allLists[currentListName]) {
+        allLists[currentListName].items = items;
+        saveAllLists();
+    }
 }
 
 function display() {
@@ -445,19 +706,32 @@ function display() {
     if (items.length === 0) {
         list.innerHTML = `<div class="empty-state">
             <span>✨</span>
-            <p>Your list is empty. Add your first item!</p>
+            <p>${currentListName ? "Add your first item!" : "Create or select a list to get started!"}</p>
         </div>`;
         document.getElementById("total").innerText = "₹0";
         document.getElementById("warning").innerText = "";
+        document.getElementById("categoryBreakdown").classList.remove('show');
         return;
     }
 
-    items.forEach((item, index) => {
+    // Sort items if needed
+    let displayItems = [...items];
+    if (sortByCategory) {
+        displayItems.sort((a, b) => {
+            const catA = (a.category || 'General').toLowerCase();
+            const catB = (b.category || 'General').toLowerCase();
+            return catA.localeCompare(catB);
+        });
+    }
+
+    displayItems.forEach((item, index) => {
         total += item.price;
 
         let li = document.createElement("li");
         li.style.animationDelay = `${index * 0.05}s`;
         li.classList.add("animate");
+        
+        const originalIndex = items.indexOf(item);
         li.innerHTML = `
             <div class="item-info">
                 <div class="item-name">${item.name}</div>
@@ -467,8 +741,8 @@ function display() {
                 </div>
             </div>
             <div class="item-actions">
-                <button class="check-btn" onclick="toggle(${index})" title="Mark as bought">✓</button>
-                <button class="delete-btn" onclick="removeItem(${index})" title="Remove item">✕</button>
+                <button class="check-btn" onclick="toggle(${originalIndex})" title="Mark as bought">✓</button>
+                <button class="delete-btn" onclick="removeItem(${originalIndex})" title="Remove item">✕</button>
             </div>`;
 
         if (item.bought) li.classList.add("bought");
@@ -484,16 +758,57 @@ function display() {
     } else {
         warning.innerText = "";
     }
+
+    // Display category breakdown
+    displayCategoryBreakdown();
+}
+
+function displayCategoryBreakdown() {
+    if (items.length === 0) {
+        document.getElementById("categoryBreakdown").classList.remove('show');
+        return;
+    }
+
+    const breakdown = {};
+    let maxAmount = 0;
+
+    items.forEach(item => {
+        const cat = item.category || 'General';
+        if (!breakdown[cat]) breakdown[cat] = 0;
+        breakdown[cat] += item.price;
+        maxAmount = Math.max(maxAmount, breakdown[cat]);
+    });
+
+    let html = '<div class="breakdown-title">Spending by Category</div>';
+    
+    Object.keys(breakdown).sort().forEach(cat => {
+        const amount = breakdown[cat];
+        const percentage = (amount / maxAmount) * 100;
+        html += `
+            <div class="breakdown-item">
+                <div class="breakdown-label">${cat}</div>
+                <div class="breakdown-bar">
+                    <div class="breakdown-fill" style="width: ${percentage}%"></div>
+                </div>
+                <div class="breakdown-amount">₹${amount.toFixed(0)}</div>
+            </div>`;
+    });
+
+    const breakdownDiv = document.getElementById("categoryBreakdown");
+    breakdownDiv.innerHTML = html;
+    breakdownDiv.classList.add('show');
 }
 
 function toggle(i) {
     items[i].bought = !items[i].bought;
+    saveListData();
     display();
 }
 
 function removeItem(i) {
     if (confirm("Remove this item?")) {
         items.splice(i, 1);
+        saveListData();
         display();
     }
 }
